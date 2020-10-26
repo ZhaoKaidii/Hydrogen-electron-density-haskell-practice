@@ -197,7 +197,7 @@ points i x
     | i <= 0 = []
     | otherwise = (i*x) : points (i-1) x
 
---'sumintt' and 'ratioeledensity' is the ratial possibility of electrons (assume n shell full filled), 'twoshell' is the example for 2 full shell
+--'sumintt' and 'ratioeledensity' is the ratial possibility of electrons (assume n shell full filled), 'twoshell' is the example for 2 full shell, already in atomic units(r=1 means r is 1 borh radius)
 sumint :: (Enum a, Floating a, Ord a) => a -> a -> a -> a
 sumint r x n =sum (totaleffitem r x n)
 sumintt :: (Enum a, Floating a, Ord a) => a -> a -> a
