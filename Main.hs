@@ -1,145 +1,188 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Main where
 
-import Lib
+import Lib ( someFunc )
 
 main :: IO ()
 main = someFunc
 
+--some basic function & coefficients
+square :: Num a => a -> a
+square x= x*x
 
-double :: Num a => a -> a
-double x = x + x
+factorial :: (Num a, Enum a) => a -> a
+factorial x = product [1..x]
 
-quadruple :: Num a => a -> a
-quadruple x = double (double x)
+facto :: (Eq p, Num p) => p -> p
+facto 0 =1
+facto x = x*facto(x-1)
 
-
-octant :: Num a => a -> a
-octant x = quadruple(double x) 
-
-coll :: Integral a => a -> a -> a
-coll x y = factorial x `div` factorial y
-
-poly :: Num a => a -> a
-poly x = let 
-    y = x + 1
-    in y * y
-
-deunss :: Floating a => a -> a
-deunss xs = de(un(ss xs)) 
-    where   
-        de xs = sin xs * cos(octant xs)
-        un xs = poly xs + square xs
-        ss xs = tan xs * quadruple xs
-
-fs :: [a] -> a
-fs xs=head xs
-
-a :: [Integer]
-a = [1,2,3,5,5]
-
-b :: (Char, Integer, Integer, [Integer], Bool -> Bool)
-b= ('a',5,8,[5,6],not)
+divi :: Fractional a => a -> a -> a
+divi x y = x / y
 
 
-cp :: Ord p => p -> p -> p
-cp xs n = if n < xs
-    then xs
-    else n
+-- define laguerrel polynomials
+coef :: Fractional a => a -> a -> a
+coef x n = divi  y z
+           where y=2*n-x-1
+                 z=n
 
-sg :: (Ord a, Num a, Num p) => a -> p
-sg xs 
-    |xs < 0 = -1
-    |xs == 0 = 0
-    |otherwise = 1
+coeff :: Fractional a => a -> a
+coeff n = 
+    let x= (n-1)  
+    in  x/n 
 
-sg1 :: (Ord a, Num a, Num p) => a -> p
-sg1 xs=if xs<0
-    then -1
-    else (if xs==0
-         then 0
-         else 1)
+laguerrel :: (Eq a, Fractional a) => a -> a -> a
+laguerrel x 0 = 1
+laguerrel x 1 =1-x
+laguerrel x n =  (coef x n )* laguerrel x (n-1) - (coeff n) * laguerrel x (n-2)
+
+coefl :: Fractional a => a -> a -> a -> a
+coefl x m n = divi y z
+              where y=2*n-x-1+m
+                    z=n
+coefll :: Fractional a => a -> a -> a
+coefll m n = 
+           let x=m+n-1
+               y=n
+           in x/n
+
+laguerrell :: (Eq a, Fractional a) => a -> a -> a -> a
+laguerrell x m 0 = 1
+laguerrell x m 1 = m-x+1
+laguerrell x m n =  (coefl x m n )* laguerrell x m (n-1) - (coefll m n) * laguerrell x m (n-2)
 
 
 
-sg2 :: (Ord a, Num a) => a -> [Char]
-sg2 xs=if xs<0
-    then "neg"
-    else (if xs==0
-         then "zero"
-         else "pos")         
+--define Legendre polynomials
+
+coeflp :: Fractional a => a -> a
+coeflp n = divi y n
+           where y=(2*n-1)
+
+coeflpp :: Fractional a => a -> a
+coeflpp n =
+           let y=(n-1)
+           in y/n
+
+legpoly :: (Eq a, Fractional a) => a -> a -> a
+legpoly x 0 =1
+legpoly x 1 =x
+legpoly x n = (coeflp n )*x*legpoly x (n-1) -(coeflpp n)*legpoly x (n-2)
 
 
-sg3 :: (Ord a, Num a) => a -> Char
-sg3 xs=if xs<0
-    then '-'
-    else (if xs==0
-         then 'z'
-         else '+')   
+--define associated Legendre polynomials
+coefaslp :: Floating a => a -> a -> a -> a
+coefaslp x m n = let   
+                     xs=m+n
+                     y=m+n-1
+                     z=2*n+1
+                     w=(1-x**2)**0.5
+                in  xs*y/(z*w)
+
+coefaslpp :: Floating a => a -> a -> a -> a
+coefaslpp x m n=let 
+                   xs=n-m+2
+                   y=n-m+1
+                   z=2*n+1
+                   w=(1-x**2)**0.5
+                in xs*y/(z*w)
+
+sss :: Floating a => a -> a -> a
+sss x n = (-1)/((2*n+1)*sqrt(1+square x))
+
+asslegpoly :: (Eq a, Floating a) => a -> a -> a -> a
+asslegpoly x m 0 = 1
+asslegpoly x 0 1 = x
+asslegpoly 1 m n = 0
+asslegpoly (-1) m n = 0
+asslegpoly x 0 n = (coeflp n )*x*asslegpoly x 0 (n-1) -(coeflpp n)*asslegpoly x 0 (n-2)
+asslegpoly x m n = (coefaslp x m n)*(asslegpoly x (m-1) (n-1)) - (coefaslpp x m n) *(asslegpoly x (m-1) (n+1))
+
+assslegpoly :: (Floating p, Eq p) => p -> p -> p -> p
+assslegpoly x m n = let 
+                     z= (-1)*m
+                    in ((-1)**(z))*(asslegpoly x z n) *(facto(n+m)/facto(n-m))
 
 
-nt :: Bool -> Bool
-nt xs=if xs==True 
-    then False
-    else True
+swaslp :: (Ord p, Floating p) => p -> p -> p -> p
+swaslp x m n =if m>=0
+              then asslegpoly x m n
+              else assslegpoly x m n
+
+--Reparameterization in terms of angles
+talp :: (Ord a, Floating a) => a -> a -> a -> a
+talp x m n = 
+                       let z= cos x
+                           w=(-1)**m
+                       in  w*swaslp z m n
+--some factors
+ss :: Floating a => a -> a
+ss x = (-1)**((x + abs x)/2) 
+
+factor :: (Floating a, Eq a) => a -> a -> a
+factor x y =  let 
+                       q=2*y+1
+                       w=facto(y- x)
+                       r=facto(y+ x)
+                       in (q*w)/(r*4*pi)
+
+sqf :: (Floating a, Eq a) => a -> a -> a
+sqf m  n = sqrt (factor m n)
+factormz :: Floating a => a -> a
+factormz x =let 
+                   q=2*x+1
+                   
+                   in (q)/(4*pi)
+
+--spheric harmonic function & the integrand, y should be a complex num mathematically but here it's no need to define that data type 
+ehm :: (Eq p, Floating p) => p -> p -> p
+ehm 0 0 = 1  
+ehm y m =  ((-1)**m) * exp (m*y)
+                    
+
+sp :: (Floating a, Ord a) => a -> a -> a -> a
+sp x m n= (sqf m n) * (talp x m n)
 
 
-fst :: [a] -> a
-fst [x,y] = x
+sphm :: (Floating a, Ord a) => a -> a -> a -> a -> a
+sphm x y n m = (ehm y m) * (sp x m n)
 
-lastElm :: [c] -> c
-lastElm xs =(head.reverse) xs
+laglll :: (Eq a, Fractional a) => a -> a -> a -> a
+laglll r l n = let
+                      x=2*l+1
+                      y=n-l-1
+                      z=2*r/n
+                     in laguerrell z x y
 
-oct :: Num c => [c] -> c
-oct xs =  (octant.head) xs
+res :: (Eq a, Floating a) => a -> a -> a -> a
+res r n l = u*x*y*z*sqrt w
+          where x=2**(l+1.5)
+                y=exp (-1*r/n)
+                z=(r/n)**l
+                w=(facto (n-l-1))/facto(l+n)
+                u=1/((sqrt pi )*(n**2))
 
-tal :: [a] -> [a]
-tal []=[]
-tal (x:xs)=xs
+phiz :: (Floating a, Ord a) => a -> a -> a -> a -> a -> a -> a
+phiz r x y n l m =(res r n l)*(laglll r l n)* sphm x y l m
 
-add1 :: Num a => a -> a
-add1 x =x +1
+yyut :: (Eq a, Floating a) => a -> a -> a -> a
+yyut r n l  =(res r n l)*(laglll r l n)
+phizero :: (Floating a, Ord a) => a -> a -> a -> a -> a -> a
+phizero r x n l m = phiz r x 0 n l m
 
-sum1 :: Num b => [b] -> [b]
-sum1 xs= map add1 xs
+itgd :: (Floating a, Ord a) => a -> a -> a -> a -> a -> a
+itgd r x n l m= 4*pi*square(phizero r x n l m)
 
-sum2 :: Num b => [b] -> [b]
-sum2 xs= map (\x->x+2) xs
+--can do a integration, can use a map to difine or use a sum of list; could obtain the density distribution for an electron with given quantum numbers; here is a sum of all electrons
+innn :: (Enum a, Fractional a) => a -> [a]
+innn x = [(y*x)/1000|y<-[0..999]]
 
-add :: Num a => a -> a -> a
-add x y= x+y
-
-
-pow :: (Num t, Num p, Eq t, Eq p) => p -> t -> p
-pow m 0 =1
-pow 0 n =0
-pow m n = m* pow m (n-1)
-
-data Expr=Val Int | Add Expr Expr
-                  | Mult Expr Expr
-
-expr :: Expr
-expr=Add (Mult (Val 2) (Val 5)) (Val 6)
-eval::Expr->Int
-eval (Val n) = n
-eval (Add x y) = eval x + eval y
-eval (Mult x y)= eval x * eval y
+totaleffitem :: (Enum a, Floating a, Ord a) => a -> a -> a -> [a]
+totaleffitem r x n = [itgd r x z w u | z<-[1..n], w <-[0..z-1],u<-[-w..w]]
+totaleffitemm :: (Enum a, Floating a, Ord a) => a -> a -> [a]
+totaleffitemm r n = [(itgd r x z w u)*(pi/1000) | x<-innn pi, z<-[1..n],w <-[0..z-1],u<-[-w..w]]
 
 
-
-switch1 x= ((x*x)+x*abs x )/(2*square(x))
-
-switch2 x= if x>=0
-           then 1
-           else 0
-
-
-matt :: (Ord t, Num t, Enum t) => t -> [[t]]
-matt n =
-    let mat n result t = 
-            if t >= n*n  then result
-            else result ++ [[t+1..t+n]] ++ (mat n [] (t+n))
-    in  mat n [] 0
 
 
 integration :: (Double -> Double) -> Double -> Double -> Double
@@ -154,50 +197,16 @@ points i x
     | i <= 0 = []
     | otherwise = (i*x) : points (i-1) x
 
-map f []=[]
-map f (x:xs)= f x :(map f xs)
-
-data Tree=Leaf Int
-        -- |Node Int Tree Int
-    
-tree::Tree
-tree=Node 5 (Leaf 4)
-             --(Node 3 (Leaf 2)
-                      --(Leaf 1))
-
-occurs::Int->Tree->Bool
-occurs m (Leaf n)=m == n
-occurs m (Node t1 t2) = m ==n
-                    --  ||  occurs t1
-                    --  ||  occurs t2
-
-flatten::Tree->[Int]
-flatten (Leaf n)=[n]
-flatten (Node n t1 t2)=flatten t1
-                      -- ++[n]
-                      -- ++flatten t2
-
-domain x = [(y*x)/100|y<-[0..99]]
-
-multpi x= x*pi/1000
-
-ttt :: [Double]
-ttt = [r*w*x*y| x<-[1..2],y<-[0..x-1],r<-domain 2,w<-[-y..y]]
-
-list = [(r,x,y,w)| x<-[1..2],y<-[0..x-1],r<-domain 2,w<-[-y..y]]
-
-
-pp x = sin(x)
-ppp  = integration pp  0 pi
-
-opop x = [(y*x)/100|y<-[0..99]]
-pipi= opop pi
-pppp = map sin pipi
-
-ppt=map multpi pppp
+--'sumintt' and 'ratioeledensity' is the ratial possibility of electrons (assume n shell full filled), 'twoshell' is the example for 2 full shell
+sumint :: (Enum a, Floating a, Ord a) => a -> a -> a -> a
+sumint r x n =sum (totaleffitem r x n)
+sumintt :: (Enum a, Floating a, Ord a) => a -> a -> a
+sumintt r n = sum (totaleffitemm r  n)
 
 
 
+ratioeledensity :: (Floating a, Enum a, Ord a) => a -> a -> a
+ratioeledensity r n = (r**2) * sumintt r n
 
-
-
+twoshell :: (Floating a, Enum a, Ord a) => a -> a
+twoshell r = ratioeledensity r 2
